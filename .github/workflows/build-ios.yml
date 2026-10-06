@@ -36,5 +36,5 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: mobile_tool.ipa
-        path: export/mobile_tool.ipa
+        path: mobile_tool.ipa
         retention-days: 30
