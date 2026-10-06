@@ -29,6 +29,7 @@ jobs:
           -authenticationKeyPath "$KEYPATH" \
           -authenticationKeyID "$ASC_KEY_ID" \
           -authenticationKeyIssuerID "$ASC_KEY_ISSUER_ID" \
+          DEVELOPMENT_TEAM=4H644473LJ \
           archive
         cat > ExportOptions.plist <<'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
