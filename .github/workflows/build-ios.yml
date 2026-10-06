@@ -1,78 +1,55 @@
-name: 编译iOS IPA
+name: Build iOS IPA
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # 支持手动触发
+  workflow_dispatch:
 
 jobs:
   build-ios:
     runs-on: macos-latest
-    
     steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-    
-    - name: 查看Xcode版本
+    - uses: actions/checkout@v4
+    - name: Xcode version
       run: xcodebuild -version
-    
-    - name: 编译Archive
+    - name: Archive
       run: |
         xcodebuild \
-          -project "长须鲸手机工具.xcodeproj" \
-          -scheme "长须鲸手机工具" \
+          -project "MobileTool.xcodeproj" \
+          -scheme "MobileTool" \
           -configuration Release \
           -destination 'generic/platform=iOS' \
-          -archivePath build/长须鲸手机工具.xcarchive \
+          -archivePath build/MobileTool.xcarchive \
           archive \
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
-    
-    - name: 创建导出配置
+    - name: Export options
       run: |
         cat > exportOptions.plist << 'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
         <dict>
-            <key>method</key>
-            <string>development</string>
-            <key>compileBitcode</key>
-            <false/>
-            <key>stripSwiftSymbols</key>
-            <true/>
+          <key>method</key><string>development</string>
+          <key>compileBitcode</key><false/>
+          <key>stripSwiftSymbols</key><true/>
         </dict>
         </plist>
         EOF
-    
-    - name: 导出IPA
+    - name: Export IPA
       run: |
-        xcodebuild \
-          -exportArchive \
-          -archivePath build/长须鲸手机工具.xcarchive \
+        xcodebuild -exportArchive \
+          -archivePath build/MobileTool.xcarchive \
           -exportPath export \
           -exportOptionsPlist exportOptions.plist \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
-    
-    - name: 重命名IPA
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+    - name: Rename
       run: |
         ls -la export/
         mv export/*.ipa export/mobile_tool.ipa
-    
-    - name: 上传IPA
-      uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v4
       with:
         name: mobile_tool.ipa
         path: export/mobile_tool.ipa
         retention-days: 30
-    
-    - name: 编译完成
-      run: |
-        echo "=========================================="
-        echo "  ✅ iOS IPA编译成功！"
-        echo "=========================================="
-        echo "IPA文件: export/mobile_tool.ipa"
-        echo "请在Actions页面下载artifact"
