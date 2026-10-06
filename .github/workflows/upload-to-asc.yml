@@ -1,0 +1,28 @@
+name: Upload to App Store Connect
+
+on:
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Upload IPA
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+      run: |
+        set -x
+        IPA="upload/signed.ipa"
+        TRANS=""
+        for c in \
+          /usr/local/itms/bin/iTMSTransporter \
+          /Applications/Xcode.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter; do
+          if [ -x "$c" ]; then TRANS="$c"; break; fi
+        done
+        if [ -n "$TRANS" ]; then
+          "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
+        else
+          xcrun altool --upload-app --type ios -f "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD"
+        fi
