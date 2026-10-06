@@ -54,10 +54,9 @@ jobs:
           -authenticationKeyIssuerID "$ASC_KEY_ISSUER_ID"
         IPA=$(find export -name "*.ipa" | head -1)
         echo "exported: $IPA"
-        TRANS=""
-        for c in \
-          /usr/local/itms/bin/iTMSTransporter \
-          /Applications/Xcode.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter; do
-          if [ -x "$c" ]; then TRANS="$c"; break; fi
-        done
+        TRANS=$(xcrun -find iTMSTransporter 2>/dev/null || true)
+        if [ -z "$TRANS" ]; then
+          TRANS=$(ls /Applications/Xcode*.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter 2>/dev/null | head -1 || true)
+        fi
+        echo "using transporter: $TRANS"
         "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
