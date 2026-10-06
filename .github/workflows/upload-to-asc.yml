@@ -54,9 +54,13 @@ jobs:
           -authenticationKeyIssuerID "$ASC_KEY_ISSUER_ID"
         IPA=$(find export -name "*.ipa" | head -1)
         echo "exported: $IPA"
-        TRANS=$(xcrun -find iTMSTransporter 2>/dev/null || true)
-        if [ -z "$TRANS" ]; then
-          TRANS=$(ls /Applications/Xcode*.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter 2>/dev/null | head -1 || true)
+        TRANS=$(ls /Applications/Xcode*.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter 2>/dev/null | head -1 || true)
+        echo "framework transporter: $TRANS"
+        UPLOADED=0
+        if [ -n "$TRANS" ]; then
+          if "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme; then UPLOADED=1; fi
         fi
-        echo "using transporter: $TRANS"
-        "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
+        if [ "$UPLOADED" != "1" ]; then
+          echo "=== fallback: altool ==="
+          xcrun altool --upload-app --type ios -f "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD"
+        fi
