@@ -24,30 +24,15 @@ jobs:
           CODE_SIGN_IDENTITY="" \
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO
-    - name: Export options
+    - name: Package IPA
       run: |
-        cat > exportOptions.plist << 'EOF'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-          <key>method</key><string>development</string>
-          <key>compileBitcode</key><false/>
-          <key>stripSwiftSymbols</key><true/>
-        </dict>
-        </plist>
-        EOF
-    - name: Export IPA
-      run: |
-        xcodebuild -exportArchive \
-          -archivePath build/MobileTool.xcarchive \
-          -exportPath export \
-          -exportOptionsPlist exportOptions.plist \
-          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-    - name: Rename
-      run: |
-        ls -la export/
-        mv export/*.ipa export/mobile_tool.ipa
+        APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+        echo "app: $APP_PATH"
+        rm -rf Payload
+        mkdir Payload
+        cp -R "$APP_PATH" Payload/
+        zip -qr mobile_tool.ipa Payload
+        ls -la mobile_tool.ipa
     - uses: actions/upload-artifact@v4
       with:
         name: mobile_tool.ipa
