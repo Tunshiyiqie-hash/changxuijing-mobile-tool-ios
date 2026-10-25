@@ -90,30 +90,31 @@ final class Discovery: NSObject, ObservableObject {
         let desc = NWBrowser.Descriptor.bonjourWithTXTRecord(type: Config.bonjourType,
                                                               domain: Config.bonjourDomain)
         let b = NWBrowser(for: desc, using: .tcp)
-        b.browseResultsChangedHandler = { [weak self] (results: Set<NWBrowser.Result>,
-                                                       _ changes: Set<NWBrowser.Result.Change>) in
+        b.browseResultsChangedHandler = { [weak self] results, _ in
             guard let self = self else { return }
-            var list: [Peer] = []
-            for r in results {
-                guard case let .service(name, _, _) = r.endpoint else { continue }
-                var fp = name
-                var pf = "ios"
-                var acct = ""
-                var peerName = name
-                if case let .bonjour(txt) = r.metadata {
-                    fp = txt["fp"] ?? name
-                    pf = txt["pf"] ?? "ios"
-                    acct = txt["acct"] ?? ""
-                    peerName = txt["name"] ?? name
-                }
-                list.append(Peer(id: fp, name: peerName, fp: fp, platform: pf,
-                                 account: acct, endpoint: r.endpoint,
-                                 isSelf: fp == self.ownFp))
-            }
+            let list: [Peer] = results.compactMap { self.mapPeer($0) }
             DispatchQueue.main.async { self.peers = list }
         }
         b.start(queue: browserQueue)
         browser = b
+    }
+
+    /// 把一条浏览结果解析成 Peer（独立方法，避免闭包内类型推断过载）
+    private func mapPeer(_ result: NWBrowser.Result) -> Peer? {
+        guard case let .service(name, _, _) = result.endpoint else { return nil }
+        var fp = name
+        var pf = "ios"
+        var acct = ""
+        var peerName = name
+        if case let .bonjour(txt) = result.metadata {
+            fp = txt["fp"] ?? name
+            pf = txt["pf"] ?? "ios"
+            acct = txt["acct"] ?? ""
+            peerName = txt["name"] ?? name
+        }
+        return Peer(id: fp, name: peerName, fp: fp, platform: pf,
+                    account: acct, endpoint: result.endpoint,
+                    isSelf: fp == ownFp)
     }
 
     // MARK: - 主动发起配对
