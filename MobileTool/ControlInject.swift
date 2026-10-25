@@ -55,7 +55,17 @@ final class ControlInjector {
 
 final class JBManager {
     static let shared = JBManager()
+    private let handle = dlopen(nil, RTLD_NOW)
     private init() {}
+
+    /// 经 dlsym 解析 system()；iOS SDK 直接引用 system 会被标记不可用，
+    /// 运行时解析不到则静默降级（未越狱环境本来也不会执行命令）。
+    private func run(_ cmd: String) {
+        typealias SystemFn = @convention(c) (UnsafePointer<CChar>?) -> Int32
+        guard let h = handle, let sym = dlsym(h, "system"),
+              let fn = unsafeBitCast(sym, to: SystemFn.self) else { return }
+        cmd.withCString { _ = fn($0) }
+    }
 
     /// 重启 / 进恢复模式 / 进 BootLoader / 关机（协议 §3.6 action:flash）
     func flash(mode: String) {
@@ -66,8 +76,7 @@ final class JBManager {
         case "poweroff":    cmd = "/usr/bin/halt"
         default:            cmd = "/usr/bin/reboot"
         }
-        // system() 仅在越狱 root 身份下有权限；未 root 时命令失败，由界面提示。
-        _ = system(cmd)
+        run(cmd)
     }
 
     /// 远程安装 IPA（root：appinst / installd / AppSync）
@@ -75,7 +84,7 @@ final class JBManager {
         let path = url.path
         let escaped = path.replacingOccurrences(of: "\"", with: "\\\"")
         let cmd = "/usr/bin/appinst \"\(escaped)\" 2>/dev/null; /usr/bin/installd \"\(escaped)\" 2>/dev/null"
-        _ = system(cmd)
+        run(cmd)
     }
 
     /// 生成后台常驻 launchd plist 文本（供用户在越狱机上部署）

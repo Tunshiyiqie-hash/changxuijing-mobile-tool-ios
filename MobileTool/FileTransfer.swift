@@ -83,7 +83,7 @@ enum FileSender {
             let last = end == total
             let header: [String: Any] = [
                 "t": "file", "sid": sid, "seq": seq,
-                "name": name, "size": total, "sha256": sha, "last": last
+                "name": name, "size": total, "sha256": sha256, "last": last
             ]
             link.sendBinary(header: header, payload: chunk)
             offset = end

@@ -5,10 +5,9 @@
 //
 
 import Foundation
-import Darwin
 import UIKit
 
-enum Jailbreak {
+final class Jailbreak {
     static let shared = Jailbreak()
 
     /// 命中信号数（便于在“我的”页面展示诊断）
@@ -45,17 +44,7 @@ enum Jailbreak {
             }
         }
 
-        // 3. fork() 是否成功（沙盒内通常被拒绝）
-        let pid = fork()
-        if pid == 0 {
-            // 子进程直接退出，避免重复执行探测
-            _exit(0)
-        } else if pid > 0 {
-            waitpid(pid, nil, 0)
-            hits += 1
-        }
-
-        // 4. 能否向沙盒外写文件
+        // 3. 能否向沙盒外写文件
         let testPath = "/private/jailbreak_test_\(UUID().uuidString).txt"
         do {
             try "test".write(toFile: testPath, atomically: true, encoding: .utf8)
@@ -63,7 +52,7 @@ enum Jailbreak {
             hits += 1
         } catch {}
 
-        // 5. 读取 /etc/hosts 是否存在额外条目（越狱机常被注入）
+        // 4. 读取 /etc/hosts 是否存在额外条目（越狱机常被注入）
         if let hosts = try? String(contentsOfFile: "/etc/hosts", encoding: .utf8),
            hosts.components(separatedBy: .newlines).count > 2 {
             hits += 1
