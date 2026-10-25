@@ -21,6 +21,8 @@ targets:
     sources:
       - path: MobileTool
       - path: Shared
+    info:
+      path: MobileTool/Info.plist
     entitlements:
       path: MobileTool/MobileTool.entitlements
     settings:
@@ -44,6 +46,8 @@ targets:
     sources:
       - path: BroadcastExtension
       - path: Shared
+    info:
+      path: BroadcastExtension/Info.plist
     entitlements:
       path: BroadcastExtension/BroadcastExtension.entitlements
     settings:
