@@ -91,7 +91,7 @@ final class Discovery: NSObject, ObservableObject {
                                                               domain: Config.bonjourDomain)
         let b = NWBrowser(for: desc, using: .tcp)
         b.browseResultsChangedHandler = { [weak self] (results: Set<NWBrowser.Result>,
-                                                       _ change: NWBrowser.Result.Change) in
+                                                       _ changes: Set<NWBrowser.Result.Change>) in
             guard let self = self else { return }
             var list: [Peer] = []
             for r in results {
