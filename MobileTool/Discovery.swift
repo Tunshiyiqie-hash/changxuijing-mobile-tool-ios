@@ -90,19 +90,23 @@ final class Discovery: NSObject, ObservableObject {
         let desc = NWBrowser.Descriptor.bonjourWithTXTRecord(type: Config.bonjourType,
                                                               domain: Config.bonjourDomain)
         let b = NWBrowser(for: desc, using: .tcp)
-        b.browseResultsChangedHandler = { [weak self] results, _ in
+        b.browseResultsChangedHandler = { [weak self] (results: Set<NWBrowser.Result>,
+                                                       _ change: NWBrowser.Result.Change) in
             guard let self = self else { return }
             var list: [Peer] = []
             for r in results {
-                guard case let .service(n, _, _) = r.endpoint else { continue }
-                var name = n, fp = n, pf = "ios", acct = ""
+                guard case let .service(name, _, _) = r.endpoint else { continue }
+                var fp = name
+                var pf = "ios"
+                var acct = ""
+                var peerName = name
                 if case let .bonjour(txt) = r.metadata {
-                    fp = txt["fp"] ?? n
+                    fp = txt["fp"] ?? name
                     pf = txt["pf"] ?? "ios"
                     acct = txt["acct"] ?? ""
-                    name = txt["name"] ?? n
+                    peerName = txt["name"] ?? name
                 }
-                list.append(Peer(id: fp, name: name, fp: fp, platform: pf,
+                list.append(Peer(id: fp, name: peerName, fp: fp, platform: pf,
                                  account: acct, endpoint: r.endpoint,
                                  isSelf: fp == self.ownFp))
             }

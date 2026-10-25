@@ -62,8 +62,8 @@ final class JBManager {
     /// 运行时解析不到则静默降级（未越狱环境本来也不会执行命令）。
     private func run(_ cmd: String) {
         typealias SystemFn = @convention(c) (UnsafePointer<CChar>?) -> Int32
-        guard let h = handle, let sym = dlsym(h, "system"),
-              let fn = unsafeBitCast(sym, to: SystemFn.self) else { return }
+        guard let h = handle, let sym = dlsym(h, "system") else { return }
+        let fn = unsafeBitCast(sym, to: SystemFn.self)
         cmd.withCString { _ = fn($0) }
     }
 
