@@ -1,0 +1,62 @@
+name: MobileTool
+options:
+  bundleIdPrefix: com.changxujing
+  deploymentTarget:
+    iOS: "15.0"
+  developmentLanguage: zh-Hans
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ALWAYS_SEARCH_USER_PATHS: NO
+    CLANG_ENABLE_MODULES: YES
+    TARGETED_DEVICE_FAMILY: "1"
+    SWIFT_EMIT_LOC_STRINGS: YES
+    ENABLE_PREVIEWS: YES
+    GENERATE_INFOPLIST_FILE: NO
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+    INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+    LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+targets:
+  MobileTool:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: MobileTool
+      - path: Shared
+    info:
+      path: MobileTool/Info.plist
+    entitlements:
+      path: MobileTool/MobileTool.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.changxujing.mobiletool
+        PRODUCT_NAME: MobileTool
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: MobileToolBroadcast
+        embed: true
+        link: false
+  MobileToolBroadcast:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: BroadcastExtension
+      - path: Shared
+    info:
+      path: BroadcastExtension/Info.plist
+    entitlements:
+      path: BroadcastExtension/BroadcastExtension.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.changxujing.mobiletool.broadcast
+        PRODUCT_NAME: MobileToolBroadcast
+        SKIP_INSTALL: NO

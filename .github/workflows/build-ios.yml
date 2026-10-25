@@ -9,32 +9,49 @@ jobs:
   build-ios:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Xcode version
-      run: xcodebuild -version
-    - name: Archive
-      run: |
-        xcodebuild \
-          -project "MobileTool.xcodeproj" \
-          -scheme "MobileTool" \
-          -configuration Release \
-          -destination 'generic/platform=iOS' \
-          -archivePath build/MobileTool.xcarchive \
-          archive \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
-    - name: Package IPA
-      run: |
-        APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
-        echo "app: $APP_PATH"
-        rm -rf Payload
-        mkdir Payload
-        cp -R "$APP_PATH" Payload/
-        zip -qr mobile_tool.ipa Payload
-        ls -la mobile_tool.ipa
-    - uses: actions/upload-artifact@v4
-      with:
-        name: mobile_tool.ipa
-        path: mobile_tool.ipa
-        retention-days: 30
+      - uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Archive (unsigned)
+        run: |
+          xcodebuild \
+            -project "MobileTool.xcodeproj" \
+            -scheme "MobileTool" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/MobileTool.xcarchive \
+            archive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Verify app and extension
+        run: |
+          APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+          echo "app: $APP_PATH"
+          find "$APP_PATH/PlugIns" -name "*.appex"
+          ls -la "$APP_PATH"
+
+      - name: Package IPA
+        run: |
+          APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+          rm -rf Payload
+          mkdir Payload
+          cp -R "$APP_PATH" Payload/
+          find Payload -name "*.appex"
+          zip -qr mobile_tool.ipa Payload
+          ls -la mobile_tool.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile_tool.ipa
+          path: mobile_tool.ipa
+          retention-days: 30
