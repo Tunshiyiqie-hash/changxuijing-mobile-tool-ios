@@ -62,10 +62,11 @@ class SampleHandler: RPBroadcastSampleHandler {
             ciImage = ciImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         }
 
+        let qualityKey = CIContextOption(rawValue: kCICompressionQuality as String)
         guard let jpeg = ciContext.jpegRepresentation(
             of: ciImage,
             colorSpace: CGColorSpaceCreateDeviceRGB(),
-            options: [CIContextOption.compressionQuality: Config.jpegQuality]
+            options: [qualityKey: Config.jpegQuality]
         ) else { return }
 
         let frameExtent = ciImage.extent
