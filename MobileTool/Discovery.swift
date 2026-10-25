@@ -104,7 +104,7 @@ final class Discovery: NSObject, ObservableObject {
         let endpoint: NWEndpoint = result.endpoint
         var name: String = "未知设备"
         switch endpoint {
-        case NWEndpoint.service(let n, _, _):
+        case NWEndpoint.service(let n, _, _, _):
             name = n
         default:
             return nil
