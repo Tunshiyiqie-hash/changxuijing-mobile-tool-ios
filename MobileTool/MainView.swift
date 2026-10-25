@@ -134,6 +134,7 @@ struct MeView: View {
                     InfoRow(title: "越狱状态",
                             value: app.jailbroken ? "已越狱（高级功能已解锁）" : "未越狱（仅单向投屏/查看）")
                     Toggle("离线模式", isOn: $app.offlineMode)
+                    Toggle("允许被局域网发现", isOn: $app.discoveryOn)
                 }
 
                 Section("屏幕发送（未越狱单向）") {

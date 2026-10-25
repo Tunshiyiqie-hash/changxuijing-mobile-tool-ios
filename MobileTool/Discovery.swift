@@ -44,9 +44,18 @@ final class Discovery: NSObject, ObservableObject {
         super.init()
     }
 
+    // MARK: - 允许被发现开关（协议 §2.1，默认开；离线模式另由 AppState 拦截）
+    static let enabledKey = "discovery_enabled"
+    static func isEnabled() -> Bool {
+        UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true
+    }
+    static func setEnabled(_ v: Bool) {
+        UserDefaults.standard.set(v, forKey: enabledKey)
+    }
+
     // MARK: - 开关
     func start() {
-        guard listener == nil, browser == nil else { return }
+        guard Discovery.isEnabled(), listener == nil, browser == nil else { return }
         startListener()
         startBrowser()
     }
@@ -59,22 +68,30 @@ final class Discovery: NSObject, ObservableObject {
         peers = []
     }
 
-    // MARK: - 被发现：注册 Bonjour 服务 + TXT
-    private func startListener() {
-        let acct = AppState.shared.loginName
-        let txt = NWTXTRecord([
+    // MARK: - 被发现：注册 Bonjour 服务 + TXT（v/name/pf/fp/port/acct，协议 §2.1）
+    private func makeTxt(port: UInt16) -> NWTXTRecord {
+        NWTXTRecord([
             "v": "1",
             "name": ownName,
             "pf": "ios",
             "fp": ownFp,
-            "acct": acct
+            "port": String(port),
+            "acct": AppState.shared.loginName
         ])
+    }
+
+    private func startListener() {
         guard let lw = try? NWListener(using: .tcp) else { return }
         lw.service = NWListener.Service(name: ownFp,
                                         type: Config.bonjourType,
                                         domain: Config.bonjourDomain,
-                                        txtRecord: txt)
-        lw.stateUpdateHandler = { _ in }
+                                        txtRecord: makeTxt(port: 0))
+        lw.stateUpdateHandler = { state in
+            // 端口就绪后回填真实监听端口到 TXT 记录
+            if case .ready = state, let port = lw.port?.rawValue {
+                lw.service?.txtRecord = self.makeTxt(port: port)
+            }
+        }
         lw.newConnectionHandler = { [weak self] connection in
             guard let self = self else { return }
             let link = LanLink(accepted: connection)

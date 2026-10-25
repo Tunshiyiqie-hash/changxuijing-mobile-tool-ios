@@ -176,7 +176,8 @@ struct DevicesView: View {
                         switch r {
                         case .success(let ticket):
                             crossTicket = ticket
-                            app.toast = "跨账号票据已获取"
+                            app.pendingTicket = ticket
+                            app.toast = "跨账号票据已获取，可在附近设备上发起配对"
                         case .failure(let e):
                             app.toast = "校验失败：\(e)"
                         }

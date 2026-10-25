@@ -46,7 +46,16 @@ final class AppState: ObservableObject {
             if offlineMode { stopDiscovery() } else if loggedIn { startDiscovery() }
         }
     }
+    @Published var discoveryOn: Bool = Discovery.isEnabled() {
+        didSet {
+            Discovery.setEnabled(discoveryOn)
+            if discoveryOn { startDiscovery() } else { stopDiscovery() }
+        }
+    }
     @Published var jailbroken: Bool
+
+    /// 跨账号换取的一次性票据，随下一次主动 pair_request 上送（协议 §2.3）
+    var pendingTicket: String?
 
     // MARK: 账号/设备
     @Published var loginName: String = ""
@@ -146,7 +155,7 @@ final class AppState: ObservableObject {
 
     // MARK: - 发现开关
     func startDiscovery() {
-        guard loggedIn, !offlineMode else { return }
+        guard loggedIn, !offlineMode, discoveryOn else { return }
         Discovery.shared.start()
     }
 
@@ -569,6 +578,10 @@ extension AppState: LanLinkDelegate {
                 var req: [String: Any] = ["t": "pair_request",
                                           "name": UIDevice.current.name, "pf": "ios", "fp": fp]
                 if !loginName.isEmpty { req["account"] = loginName }
+                if let ticket = pendingTicket, !ticket.isEmpty {
+                    req["ticket"] = ticket
+                    pendingTicket = nil
+                }
                 link.sendControl(req)
             }
             link.peerName = msg["name"] as? String ?? link.peerName
