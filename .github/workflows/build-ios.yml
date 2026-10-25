@@ -20,13 +20,6 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Debug plist settings
-        run: |
-          echo "===== GENERATE_INFOPLIST_FILE / INFOPLIST_FILE / MARKETING_VERSION ====="
-          grep -nE "GENERATE_INFOPLIST_FILE|INFOPLIST_FILE|MARKETING_VERSION|PRODUCT_BUNDLE_IDENTIFIER" MobileTool.xcodeproj/project.pbxproj
-          echo "===== source app Info.plist keys ====="
-          grep -E "NSLocalNetworkUsageDescription|NSBonjourServices|NSExtension" MobileTool/Info.plist BroadcastExtension/Info.plist || true
-
       - name: Archive (unsigned)
         run: |
           xcodebuild \
@@ -39,6 +32,16 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Merge custom Info.plist keys
+        run: |
+          APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+          python3 scripts/merge_plist.py MobileTool/Info.plist "$APP_PATH/Info.plist" \
+            MobileTool com.changxujing.mobiletool MobileTool MobileTool 1.1.0 1
+          python3 scripts/merge_plist.py BroadcastExtension/Info.plist "$APP_PATH/PlugIns/MobileToolBroadcast.appex/Info.plist" \
+            MobileToolBroadcast com.changxujing.mobiletool.broadcast MobileToolBroadcast MobileToolBroadcast 1.1.0 1
+          plutil -lint "$APP_PATH/Info.plist"
+          plutil -lint "$APP_PATH/PlugIns/MobileToolBroadcast.appex/Info.plist"
 
       - name: Verify app and extension
         run: |
