@@ -21,8 +21,6 @@ targets:
     sources:
       - path: MobileTool
       - path: Shared
-    info:
-      path: MobileTool/Info.plist
     entitlements:
       path: MobileTool/MobileTool.entitlements
     settings:
@@ -32,8 +30,6 @@ targets:
         SWIFT_VERSION: "5.0"
         MARKETING_VERSION: "1.1.0"
         CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: NO
-        INFOPLIST_FILE: MobileTool/Info.plist
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -48,8 +44,6 @@ targets:
     sources:
       - path: BroadcastExtension
       - path: Shared
-    info:
-      path: BroadcastExtension/Info.plist
     entitlements:
       path: BroadcastExtension/BroadcastExtension.entitlements
     settings:
@@ -59,7 +53,5 @@ targets:
         SWIFT_VERSION: "5.0"
         MARKETING_VERSION: "1.1.0"
         CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: NO
-        INFOPLIST_FILE: BroadcastExtension/Info.plist
         TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: NO
