@@ -9,6 +9,7 @@
 import ReplayKit
 import CoreMedia
 import CoreImage
+import UIKit
 import Foundation
 
 class SampleHandler: RPBroadcastSampleHandler {
@@ -62,12 +63,8 @@ class SampleHandler: RPBroadcastSampleHandler {
             ciImage = ciImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         }
 
-        let qualityKey = CIContextOption(rawValue: kCICompressionQuality as String)
-        guard let jpeg = ciContext.jpegRepresentation(
-            of: ciImage,
-            colorSpace: CGColorSpaceCreateDeviceRGB(),
-            options: [qualityKey: Config.jpegQuality]
-        ) else { return }
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent),
+              let jpeg = UIImage(cgImage: cgImage).jpegData(compressionQuality: Config.jpegQuality) else { return }
 
         let frameExtent = ciImage.extent
         let header: [String: Any] = [
