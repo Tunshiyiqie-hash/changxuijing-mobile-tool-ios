@@ -411,7 +411,7 @@ final class AppState: ObservableObject {
 
         let accept: () -> Void = { [weak self] in
             guard let self = self else { return }
-            var answer: [String: Any] = ["t": "answer", "sid": sid, "accept": true]
+            let answer: [String: Any] = ["t": "answer", "sid": sid, "accept": true]
             if let link = link { link.sendControl(answer) } else { self.ws?.send(json: answer) }
             if msg["t"] as? String == "screen_offer" || msg["t"] as? String == "screen_ask" {
                 self.startViewing(sid: sid)
@@ -419,7 +419,7 @@ final class AppState: ObservableObject {
         }
         let deny: () -> Void = { [weak self] in
             guard let self = self else { return }
-            var answer: [String: Any] = ["t": "answer", "sid": sid, "accept": false]
+            let answer: [String: Any] = ["t": "answer", "sid": sid, "accept": false]
             if let link = link { link.sendControl(answer) } else { self.ws?.send(json: answer) }
         }
 

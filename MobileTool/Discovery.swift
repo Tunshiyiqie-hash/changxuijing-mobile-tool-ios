@@ -87,9 +87,12 @@ final class Discovery: NSObject, ObservableObject {
                                         domain: Config.bonjourDomain,
                                         txtRecord: makeTxt(port: 0))
         lw.stateUpdateHandler = { state in
-            // 端口就绪后回填真实监听端口到 TXT 记录
+            // 端口就绪后整体重建 service，回填真实监听端口到 TXT 记录
             if case .ready = state, let port = lw.port?.rawValue {
-                lw.service?.txtRecord = self.makeTxt(port: port)
+                lw.service = NWListener.Service(name: self.ownFp,
+                                                type: Config.bonjourType,
+                                                domain: Config.bonjourDomain,
+                                                txtRecord: self.makeTxt(port: port))
             }
         }
         lw.newConnectionHandler = { [weak self] connection in
