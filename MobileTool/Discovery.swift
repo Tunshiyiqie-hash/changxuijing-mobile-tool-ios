@@ -101,20 +101,30 @@ final class Discovery: NSObject, ObservableObject {
 
     /// 把一条浏览结果解析成 Peer（独立方法，避免闭包内类型推断过载）
     private func mapPeer(_ result: NWBrowser.Result) -> Peer? {
-        guard case let .service(name, _, _) = result.endpoint else { return nil }
-        var fp = name
-        var pf = "ios"
-        var acct = ""
-        var peerName = name
-        if case let .bonjour(txt) = result.metadata {
-            fp = txt["fp"] ?? name
-            pf = txt["pf"] ?? "ios"
-            acct = txt["acct"] ?? ""
-            peerName = txt["name"] ?? name
+        let endpoint: NWEndpoint = result.endpoint
+        var name: String = "未知设备"
+        switch endpoint {
+        case NWEndpoint.service(let n, _, _):
+            name = n
+        default:
+            return nil
+        }
+        var fp: String = name
+        var pf: String = "ios"
+        var acct: String = ""
+        var peerName: String = name
+        let meta: NWBrowser.Result.Metadata = result.metadata
+        switch meta {
+        case NWBrowser.Result.Metadata.bonjour(let txt):
+            if let v: String = txt["fp"] { fp = v }
+            if let v: String = txt["pf"] { pf = v }
+            if let v: String = txt["acct"] { acct = v }
+            if let v: String = txt["name"] { peerName = v }
+        default:
+            break
         }
         return Peer(id: fp, name: peerName, fp: fp, platform: pf,
-                    account: acct, endpoint: result.endpoint,
-                    isSelf: fp == ownFp)
+                    account: acct, endpoint: endpoint, isSelf: fp == ownFp)
     }
 
     // MARK: - 主动发起配对
