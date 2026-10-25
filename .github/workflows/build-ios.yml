@@ -35,11 +35,20 @@ jobs:
 
       - name: Merge custom Info.plist keys
         run: |
+          set -e
           APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+          echo "--- source file sizes ---"
+          wc -c MobileTool/Info.plist BroadcastExtension/Info.plist
+          echo "--- source app keys ---"
+          python3 -c "import plistlib,json;print(json.dumps(sorted(plistlib.load(open('MobileTool/Info.plist','rb')).keys()),ensure_ascii=False))"
+          echo "--- source ext keys ---"
+          python3 -c "import plistlib,json;print(json.dumps(sorted(plistlib.load(open('BroadcastExtension/Info.plist','rb')).keys()),ensure_ascii=False))"
           python3 scripts/merge_plist.py MobileTool/Info.plist "$APP_PATH/Info.plist" \
             MobileTool com.changxujing.mobiletool MobileTool MobileTool 1.1.0 1
           python3 scripts/merge_plist.py BroadcastExtension/Info.plist "$APP_PATH/PlugIns/MobileToolBroadcast.appex/Info.plist" \
             MobileToolBroadcast com.changxujing.mobiletool.broadcast MobileToolBroadcast MobileToolBroadcast 1.1.0 1
+          echo "--- merged app keys ---"
+          python3 -c "import plistlib,json;print(json.dumps(sorted(plistlib.load(open('$APP_PATH/Info.plist','rb')).keys()),ensure_ascii=False))"
           plutil -lint "$APP_PATH/Info.plist"
           plutil -lint "$APP_PATH/PlugIns/MobileToolBroadcast.appex/Info.plist"
 
