@@ -20,6 +20,13 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
+      - name: Debug plist settings
+        run: |
+          echo "===== GENERATE_INFOPLIST_FILE / INFOPLIST_FILE / MARKETING_VERSION ====="
+          grep -nE "GENERATE_INFOPLIST_FILE|INFOPLIST_FILE|MARKETING_VERSION|PRODUCT_BUNDLE_IDENTIFIER" MobileTool.xcodeproj/project.pbxproj
+          echo "===== source app Info.plist keys ====="
+          grep -E "NSLocalNetworkUsageDescription|NSBonjourServices|NSExtension" MobileTool/Info.plist BroadcastExtension/Info.plist || true
+
       - name: Archive (unsigned)
         run: |
           xcodebuild \
