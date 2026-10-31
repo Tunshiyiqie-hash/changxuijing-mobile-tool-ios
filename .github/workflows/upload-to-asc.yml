@@ -8,17 +8,25 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Build, sign and upload
+
+    - name: Install XcodeGen
+      run: brew install xcodegen
+
+    - name: Generate Xcode project
+      run: xcodegen generate
+
+    - name: Set up App Store Connect API key
+      env:
+        ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      run: |
+        echo "$ASC_KEY_P8_BASE64" | base64 -D -o "$RUNNER_TEMP/AuthKey.p8"
+
+    - name: Archive (automatic signing)
       env:
         ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
         ASC_KEY_ISSUER_ID: ${{ secrets.ASC_KEY_ISSUER_ID }}
-        ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
       run: |
         set -x
-        KEYPATH="$RUNNER_TEMP/AuthKey_$ASC_KEY_ID.p8"
-        echo "$ASC_KEY_P8_BASE64" | base64 -D -o "$KEYPATH"
         xcodebuild \
           -project "MobileTool.xcodeproj" \
           -scheme "MobileTool" \
@@ -26,11 +34,28 @@ jobs:
           -destination 'generic/platform=iOS' \
           -archivePath build/MobileTool.xcarchive \
           -allowProvisioningUpdates \
-          -authenticationKeyPath "$KEYPATH" \
+          -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
           -authenticationKeyID "$ASC_KEY_ID" \
           -authenticationKeyIssuerID "$ASC_KEY_ISSUER_ID" \
           DEVELOPMENT_TEAM=4H644473LJ \
           archive
+
+    - name: Merge custom Info.plist keys
+      run: |
+        set -e
+        APP_PATH=$(find build/MobileTool.xcarchive/Products/Applications -maxdepth 1 -name "*.app" | head -1)
+        python3 scripts/merge_plist.py InfoSources/MobileTool-Info.plist "$APP_PATH/Info.plist" \
+          MobileTool com.changxujing.mobiletool MobileTool MobileTool 1.1.0 1
+        python3 scripts/merge_plist.py InfoSources/BroadcastExtension-Info.plist "$APP_PATH/PlugIns/MobileToolBroadcast.appex/Info.plist" \
+          MobileToolBroadcast com.changxujing.mobiletool.broadcast MobileToolBroadcast MobileToolBroadcast 1.1.0 1
+        plutil -lint "$APP_PATH/Info.plist"
+        plutil -lint "$APP_PATH/PlugIns/MobileToolBroadcast.appex/Info.plist"
+
+    - name: Export archive (app-store)
+      env:
+        ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        ASC_KEY_ISSUER_ID: ${{ secrets.ASC_KEY_ISSUER_ID }}
+      run: |
         cat > ExportOptions.plist <<'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -49,18 +74,21 @@ jobs:
           -exportPath export \
           -exportOptionsPlist ExportOptions.plist \
           -allowProvisioningUpdates \
-          -authenticationKeyPath "$KEYPATH" \
+          -authenticationKeyPath "$RUNNER_TEMP/AuthKey.p8" \
           -authenticationKeyID "$ASC_KEY_ID" \
           -authenticationKeyIssuerID "$ASC_KEY_ISSUER_ID"
+
+    - name: Upload to App Store Connect
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+      run: |
         IPA=$(find export -name "*.ipa" | head -1)
         echo "exported: $IPA"
         TRANS=$(ls /Applications/Xcode*.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter 2>/dev/null | head -1 || true)
-        echo "framework transporter: $TRANS"
-        UPLOADED=0
+        echo "transporter: $TRANS"
         if [ -n "$TRANS" ]; then
-          if "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme; then UPLOADED=1; fi
-        fi
-        if [ "$UPLOADED" != "1" ]; then
-          echo "=== fallback: altool ==="
+          "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
+        else
           xcrun altool --upload-app --type ios -f "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD"
         fi
