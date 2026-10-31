@@ -40,10 +40,13 @@ check("Main app", app_plist)
 check("Broadcast extension", appex_plist)
 
 if appex_plist is not None:
-    mode = appex_plist.get("RPBroadcastProcessMode")
-    print("  top-level RPBroadcastProcessMode =", mode)
+    ext = appex_plist.get("NSExtension")
+    mode = ext.get("RPBroadcastProcessMode") if isinstance(ext, dict) else None
+    print("  NSExtension.RPBroadcastProcessMode =", mode)
     if mode not in ("RPBroadcastProcessModeSampleBuffer", "RPBroadcastProcessModeMP4Clip"):
-        errors.append("missing/invalid top-level RPBroadcastProcessMode")
+        errors.append("missing/invalid NSExtension.RPBroadcastProcessMode")
+    if "RPBroadcastProcessMode" in appex_plist:
+        print("  note: top-level key present (not required)")
 
 if errors:
     print("VERIFY FAILED:")
