@@ -94,10 +94,10 @@ jobs:
         APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
       run: |
         IPA=$(find export -name "*.ipa" | head -1)
-        TRANS=$(ls /Applications/Xcode*.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Versions/A/itms/bin/iTMSTransporter 2>/dev/null | head -1 || true)
-        echo "transporter: $TRANS"
-        if [ -n "$TRANS" ]; then
-          "$TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
+        echo "uploading: $IPA"
+        xcrun --find iTMSTransporter || true
+        if xcrun --find iTMSTransporter >/dev/null 2>&1; then
+          xcrun iTMSTransporter -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
         else
           xcrun altool --upload-app --type ios -f "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD"
         fi
