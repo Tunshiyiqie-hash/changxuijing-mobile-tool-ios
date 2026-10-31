@@ -95,9 +95,12 @@ jobs:
       run: |
         IPA=$(find export -name "*.ipa" | head -1)
         echo "uploading: $IPA"
-        xcrun --find iTMSTransporter || true
-        if xcrun --find iTMSTransporter >/dev/null 2>&1; then
-          xcrun iTMSTransporter -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
+        # 查找真实的 iTMSTransporter（排除 Developer/usr/bin 下仅提示安装 Transporter 的占位程序）
+        REAL_TRANS=$(find /Applications/Xcode*.app -type f -name iTMSTransporter 2>/dev/null | grep -v "/Developer/usr/bin/" | head -1 || true)
+        echo "real iTMSTransporter: $REAL_TRANS"
+        if [ -n "$REAL_TRANS" ]; then
+          "$REAL_TRANS" -m upload -assetFile "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD" -v eXtreme
         else
+          echo "using altool"
           xcrun altool --upload-app --type ios -f "$IPA" -u "$APPLE_ID" -p "$APP_SPECIFIC_PASSWORD"
         fi
