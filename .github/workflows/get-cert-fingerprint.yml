@@ -66,9 +66,14 @@ jobs:
           -authenticationKeyID "$ASC_KEY_ID" \
           -authenticationKeyIssuerID "$ASC_KEY_ISSUER_ID"
 
-    - name: Print Apple Distribution certificate SHA-1
+    - name: Print signing certificate SHA-1 and public key
       run: |
-        echo "===== all certs with hashes (find-certificate -a -Z) ====="
-        security find-certificate -a -Z
         echo "===== codesigning identities ====="
         security find-identity -v -p codesigning
+        echo "===== export signing cert as PEM ====="
+        security find-certificate -c "Apple Development: Created via API" -p > /tmp/ios_cert.pem
+        cat /tmp/ios_cert.pem
+        echo "===== cert modulus (public key, hex) ====="
+        openssl x509 -in /tmp/ios_cert.pem -noout -modulus
+        echo "===== cert fingerprint SHA-1 ====="
+        openssl x509 -in /tmp/ios_cert.pem -noout -fingerprint -sha1
