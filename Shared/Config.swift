@@ -27,6 +27,8 @@ enum Config {
 
     /// 已信任设备指纹持久化键
     static let trustKey = "trust_fps"
+    /// 已解除信任（拉黑）设备指纹键：抑制其后续自动重连的配对弹窗
+    static let blockedKey = "blocked_fps"
 
     /// 生成本地 sid：cxj-<13位时间戳>-<6位随机>
     static func makeSid() -> String {

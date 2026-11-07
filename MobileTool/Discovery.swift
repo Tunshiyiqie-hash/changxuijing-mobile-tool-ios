@@ -153,6 +153,7 @@ final class Discovery: NSObject, ObservableObject {
             app?.toast = "无法解析该设备地址"
             return
         }
+        unblock(peer.id) // 用户主动重新配对，解除拉黑抑制
         pairStatus[peer.id] = "waiting"
         let link = LanLink(to: ep)
         link.role = "initiator"
@@ -183,5 +184,27 @@ final class Discovery: NSObject, ObservableObject {
         let arr = (UserDefaults.standard.stringArray(forKey: Config.trustKey) ?? [])
             .filter { $0 != fp }
         UserDefaults.standard.set(arr, forKey: Config.trustKey)
+    }
+
+    // MARK: - 拉黑集合（解除信任后抑制重连弹窗）
+    static func blockedSet() -> Set<String> {
+        let arr = UserDefaults.standard.stringArray(forKey: Config.blockedKey) ?? []
+        return Set(arr)
+    }
+
+    func isBlocked(_ fp: String) -> Bool {
+        Discovery.blockedSet().contains(fp)
+    }
+
+    func block(_ fp: String) {
+        var arr = UserDefaults.standard.stringArray(forKey: Config.blockedKey) ?? []
+        if !arr.contains(fp) { arr.append(fp) }
+        UserDefaults.standard.set(arr, forKey: Config.blockedKey)
+    }
+
+    func unblock(_ fp: String) {
+        let arr = (UserDefaults.standard.stringArray(forKey: Config.blockedKey) ?? [])
+            .filter { $0 != fp }
+        UserDefaults.standard.set(arr, forKey: Config.blockedKey)
     }
 }

@@ -127,8 +127,7 @@ struct DevicesView: View {
                 }
                 .disabled(status == "waiting" || status == "connected")
                 Button {
-                    discovery.untrust(p.id)
-                    app.toast = "已解除对 \(p.displayName) 的信任"
+                    app.untrustPeer(p)
                 } label: {
                     Label("解除信任", systemImage: "hand.thumbsdown")
                 }

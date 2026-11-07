@@ -290,6 +290,26 @@ final class AppState: ObservableObject {
         pendingPair = nil
     }
 
+    // MARK: - 解除信任：移除信任 + 拉黑抑制重连 + 关闭链路与弹窗
+    func untrustPeer(_ peer: Peer) {
+        let fp = peer.fp
+        Discovery.shared.untrust(fp)
+        Discovery.shared.block(fp)
+
+        // 关闭当前活动链路
+        if let link = activeLink, link.peerFp == fp {
+            link.close()
+            activeLink = nil
+        }
+        // 关闭正在显示的配对弹窗及其链路
+        if let pp = pendingPair, pp.peerFp == fp {
+            pp.link.close()
+            pendingPair = nil
+        }
+        Discovery.shared.pairStatus[fp] = "rejected"
+        toast = "已解除对 \(peer.displayName) 的信任"
+    }
+
     // MARK: - 询问弹窗应答
     func acceptAsk() {
         guard let ask = pendingAsk else { return }
@@ -365,6 +385,15 @@ final class AppState: ObservableObject {
         link.peerPlatform = pf
         link.peerFp = peerFp
         link.peerAccount = account
+
+        // 已解除信任（拉黑）：静默拒绝并关闭链路，不弹配对窗，对端重连也不打扰用户
+        if Discovery.shared.isBlocked(peerFp) {
+            link.sendControl(["t": "pair_result", "accept": false,
+                              "name": UIDevice.current.name, "pf": "ios", "fp": fp])
+            link.close()
+            Discovery.shared.pairStatus[peerFp] = "rejected"
+            return
+        }
 
         if Discovery.shared.isTrusted(peerFp) {
             // 已信任：自动接受
